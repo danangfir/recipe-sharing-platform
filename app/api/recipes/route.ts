@@ -2,45 +2,23 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDb from '../../../lib/db';
 import Recipe from '../../../models/recipe';
 import { authMiddleware } from '../../../lib/auth';
+import multer from 'multer';
 import sharp from 'sharp';
 import fs from 'fs/promises';
 import path from 'path';
 
 connectDb();
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '10');
-  const keyword = searchParams.get('keyword') || '';
-  const labels = searchParams.get('labels') || '';
-
-  const query = {
-    title: { $regex: keyword, $options: 'i' },
-    labels: { $regex: labels, $options: 'i' },
-  };
-
-  const recipes = await Recipe.find(query)
-    .limit(limit)
-    .skip((page - 1) * limit)
-    .populate('cheff')
-    .exec();
-
-  const count = await Recipe.countDocuments(query);
-
-  return NextResponse.json({
-    recipes,
-    totalPages: Math.ceil(count / limit),
-    currentPage: page,
-  });
-}
+const upload = multer({
+  storage: multer.memoryStorage(),
+});
 
 export async function POST(req: NextRequest) {
   try {
     // Autentikasi
-    const user = await authMiddleware(req);
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const isAuthenticated = await authMiddleware(req);
+    if (isAuthenticated !== true) {
+      return isAuthenticated; 
     }
 
     const formData = await req.formData();
@@ -62,12 +40,14 @@ export async function POST(req: NextRequest) {
     const imagePath = path.join(process.cwd(), 'public', 'uploads', fileName);
     await fs.writeFile(imagePath, imageBuffer);
 
+    const user = (req as any).user;
+
     const recipe = new Recipe({
       title,
       description,
       labels: labels.split(','),
       imageUrl: `/uploads/${fileName}`,
-      cheff: user.cheffId,  
+      cheff: user.cheffId,
     });
 
     await recipe.save();

@@ -9,14 +9,12 @@
     "outDir": "./dist",
     "rootDir": "./",
     "resolveJsonModule": true,
-    "typeRoots": [
-      "./node_modules/@types"
-    ],
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "typeRoots": ["./types", "./node_modules/@types"],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "noEmit": true,
     "incremental": true,
@@ -31,9 +29,10 @@
   },
   "include": [
     "**/*.ts",
-    ".next/types/**/*.ts"
+    ".next/types/**/*.ts",
+    "./types/**/*.d.ts",
+    "next-env.d.ts",
+    "**/*.tsx"
   ],
-  "exclude": [
-    "node_modules"
-  ]
+  "exclude": ["node_modules"]
 }
